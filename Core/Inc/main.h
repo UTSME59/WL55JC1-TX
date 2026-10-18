@@ -30,7 +30,6 @@ extern "C" {
 #include "stm32wlxx_hal.h"
 
 #include "stm32wlxx_nucleo.h"
-#include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -60,6 +59,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define RTC_PREDIV_A ((1<<(15-RTC_N_PREDIV_S))-1)
+#define RTC_N_PREDIV_S 10
+#define RTC_PREDIV_S ((1<<RTC_N_PREDIV_S)-1)
 #define STATUS_LED_Pin GPIO_PIN_15
 #define STATUS_LED_GPIO_Port GPIOB
 #define RCC_OSC32_IN_Pin GPIO_PIN_14
@@ -68,6 +70,7 @@ void Error_Handler(void);
 #define RCC_OSC32_OUT_GPIO_Port GPIOC
 #define CAN_INT_Pin GPIO_PIN_14
 #define CAN_INT_GPIO_Port GPIOB
+#define CAN_INT_EXTI_IRQn EXTI15_10_IRQn
 #define FE_CTRL3_Pin GPIO_PIN_3
 #define FE_CTRL3_GPIO_Port GPIOC
 #define CAN_CS_Pin GPIO_PIN_13

@@ -20,12 +20,13 @@
 #include "main.h"
 #include "rtc.h"
 #include "spi.h"
-#include "usart.h"
+#include "app_subghz_phy.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "telemetry_tx.h"
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,8 +45,6 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
-COM_InitTypeDef BspCOMInit;
 
 /* USER CODE BEGIN PV */
 
@@ -91,29 +90,13 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_RTC_Init();
+  //MX_RTC_Init();
   MX_SPI1_Init();
-  MX_USART2_UART_Init();
+  MX_SubGHz_Phy_Init();
   /* USER CODE BEGIN 2 */
   Telemetry_TX_Init();
-
+  printf("\n\n");
   /* USER CODE END 2 */
-
-  /* Initialize leds */
-  BSP_LED_Init(LED_BLUE);
-  BSP_LED_Init(LED_GREEN);
-  BSP_LED_Init(LED_RED);
-
-  /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no parity */
-  BspCOMInit.BaudRate   = 115200;
-  BspCOMInit.WordLength = COM_WORDLENGTH_8B;
-  BspCOMInit.StopBits   = COM_STOPBITS_1;
-  BspCOMInit.Parity     = COM_PARITY_NONE;
-  BspCOMInit.HwFlowCtl  = COM_HWCONTROL_NONE;
-  if (BSP_COM_Init(COM1, &BspCOMInit) != BSP_ERROR_NONE)
-  {
-    Error_Handler();
-  }
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
@@ -121,9 +104,9 @@ int main(void)
   {
 
     /* USER CODE END WHILE */
+    MX_SubGHz_Phy_Process();
 
     /* USER CODE BEGIN 3 */
-	Telemetry_TX_Run();
   }
   /* USER CODE END 3 */
 }
@@ -137,18 +120,22 @@ void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
+  /** Configure LSE Drive Capability
+  */
+  HAL_PWR_EnableBkUpAccess();
+  __HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
+
   /** Configure the main internal regulator output voltage
   */
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE2);
 
   /** Initializes the CPU, AHB and APB buses clocks
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSE|RCC_OSCILLATORTYPE_MSI;
+  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = RCC_MSICALIBRATION_DEFAULT;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.LSIDiv = RCC_LSI_DIV1;
-  RCC_OscInitStruct.LSIState = RCC_LSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
