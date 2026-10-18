@@ -8,6 +8,8 @@
 #include "telemetry_tx.h"
 
 #include "canbus.h"
+#include "radio_service.h"
+#include "radio_driver.h"
 
 #include "spi.h"
 #include "usart.h"
@@ -15,13 +17,14 @@
 #include "stm32_seq.h"
 #include "stm32_timer.h"
 #include "stm32wlxx_hal.h"
+#include "utilities_def.h"
 
 #include "main.h"
 
 #include <stdio.h>
 
-#define TASK_LED_BLINK 			(1UL << 0)
-#define TASK_CAN_RX				(1UL << 1)
+#define TASK_LED_BLINK 			(1UL << CFG_SEQ_Task_LED_BLINK)
+#define TASK_CAN_RX				(1UL << CFG_SEQ_Task_CAN_RX)
 
 #define LED_PERIOD_MS        	5000U
 
@@ -40,6 +43,18 @@ static CAN_Config_t CAN1_Config =
 	.int_pin  = CAN_INT_Pin
 };
 
+static const CAN_Frame_t testFrame =
+{
+		.id = 0x123,
+		.dlc = 8,
+		.data = {
+			0x11, 0x22, 0x33, 0x44,
+			0x55, 0x66, 0x77, 0x88
+		},
+		.extended = false,
+		.rtr = false
+};
+
 static void LED_Blink_Task(void);
 static void LED_Timer_Callback(void *context);
 
@@ -48,9 +63,10 @@ static void CAN_PrintFrame(const CAN_Frame_t *frame);
 
 void Telemetry_TX_Init(void)
 {
-	printf("\n\n");
+	//Not required due to initialisation in app_subghz_phy.c
+	//UTIL_TIMER_Init();
+
 	UTIL_SEQ_Init();
-	UTIL_TIMER_Init();
 
 	UTIL_SEQ_RegTask(TASK_LED_BLINK, UTIL_SEQ_RFU, LED_Blink_Task);
 	UTIL_SEQ_RegTask(TASK_CAN_RX, UTIL_SEQ_RFU, CAN_RX_Task);
@@ -68,6 +84,12 @@ void Telemetry_TX_Init(void)
 
 	UTIL_TIMER_Create(&ledTimer, LED_PERIOD_MS, UTIL_TIMER_ONESHOT, LED_Timer_Callback, NULL);
 	UTIL_TIMER_Start(&ledTimer);
+
+	if (Radio_SendCAN(&testFrame)) {
+		printf("[RADIO] CAN frame transmission started\r\n");
+	} else {
+		printf("[RADIO] Failed to start tranmission\r\n");
+	}
 }
 
 void Telemetry_TX_Run(void)

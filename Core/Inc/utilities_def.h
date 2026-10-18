@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
+#include <stddef.h>
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -46,7 +47,6 @@ typedef enum
   /* USER CODE END CFG_LPM_Id_t_0 */
   CFG_LPM_APPLI_Id,
   CFG_LPM_UART_TX_Id,
-  CFG_LPM_SENS_Id,
   /* USER CODE BEGIN CFG_LPM_Id_t */
 
   /* USER CODE END CFG_LPM_Id_t */
@@ -75,9 +75,10 @@ typedef enum
   */
 typedef enum
 {
-  CFG_SEQ_Task_Vcom,
+  CFG_SEQ_Task_SubGHz_Phy_App_Process,
   /* USER CODE BEGIN CFG_SEQ_Task_Id_t */
-
+  CFG_SEQ_Task_LED_BLINK,
+  CFG_SEQ_Task_CAN_RX,
   /* USER CODE END CFG_SEQ_Task_Id_t */
   CFG_SEQ_Task_NBR
 } CFG_SEQ_Task_Id_t;
