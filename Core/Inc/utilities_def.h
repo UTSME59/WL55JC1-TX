@@ -79,6 +79,7 @@ typedef enum
   /* USER CODE BEGIN CFG_SEQ_Task_Id_t */
   CFG_SEQ_Task_LED_BLINK,
   CFG_SEQ_Task_CAN_RX,
+  CFG_SEQ_Task_RADIO_TX,
   /* USER CODE END CFG_SEQ_Task_Id_t */
   CFG_SEQ_Task_NBR
 } CFG_SEQ_Task_Id_t;

@@ -25,10 +25,13 @@
 
 #define TASK_LED_BLINK 			(1UL << CFG_SEQ_Task_LED_BLINK)
 #define TASK_CAN_RX				(1UL << CFG_SEQ_Task_CAN_RX)
+#define TASK_RADIO_TX 			(1UL << CFG_SEQ_Task_RADIO_TX)
 
 #define LED_PERIOD_MS        	5000U
+#define RADIO_TX_PERIOD_MS		1000U
 
 static UTIL_TIMER_Object_t ledTimer;
+static UTIL_TIMER_Object_t radioTxTimer;
 
 static CAN_t CAN1;
 
@@ -61,6 +64,9 @@ static void LED_Timer_Callback(void *context);
 static void CAN_RX_Task(void);
 static void CAN_PrintFrame(const CAN_Frame_t *frame);
 
+static void RADIO_TX_Task(void);
+static void RADIO_TX_Timer_Callback(void *context);
+
 void Telemetry_TX_Init(void)
 {
 	//Not required due to initialisation in app_subghz_phy.c
@@ -70,6 +76,7 @@ void Telemetry_TX_Init(void)
 
 	UTIL_SEQ_RegTask(TASK_LED_BLINK, UTIL_SEQ_RFU, LED_Blink_Task);
 	UTIL_SEQ_RegTask(TASK_CAN_RX, UTIL_SEQ_RFU, CAN_RX_Task);
+	UTIL_SEQ_RegTask(TASK_RADIO_TX, UTIL_SEQ_RFU, RADIO_TX_Task);
 
 	CAN_Create(&CAN1, &CAN1_Config);
 	if (CAN1.Init(&CAN1) == CAN_OK) {
@@ -85,11 +92,8 @@ void Telemetry_TX_Init(void)
 	UTIL_TIMER_Create(&ledTimer, LED_PERIOD_MS, UTIL_TIMER_ONESHOT, LED_Timer_Callback, NULL);
 	UTIL_TIMER_Start(&ledTimer);
 
-	if (Radio_SendCAN(&testFrame)) {
-		printf("[RADIO] CAN frame transmission started\r\n");
-	} else {
-		printf("[RADIO] Failed to start tranmission\r\n");
-	}
+	UTIL_TIMER_Create(&radioTxTimer, RADIO_TX_PERIOD_MS, UTIL_TIMER_PERIODIC, RADIO_TX_Timer_Callback, NULL);
+	UTIL_TIMER_Start(&radioTxTimer);
 }
 
 void Telemetry_TX_Run(void)
@@ -145,4 +149,27 @@ static void CAN_PrintFrame(const CAN_Frame_t *frame)
 
 	const char newline[] = "\r\n";
 	HAL_UART_Transmit(&huart2, (uint8_t *)newline, sizeof(newline) - 1U, HAL_MAX_DELAY);
+}
+
+static void RADIO_TX_Task(void) {
+	static uint32_t txCount = 0;
+
+	if (Radio_SendCAN(&testFrame)) {
+		txCount++;
+
+		printf(
+			"[RADIO] TX #%lu | CAN ID: 0x%lX | DLC: %u\r\n",
+			(unsigned long)txCount,
+			(unsigned long)testFrame.id,
+			(unsigned)testFrame.dlc
+		);
+	} else {
+		printf("[RADIO] TX skipped - radio busy or invalid frame\r\n");
+	}
+}
+
+
+static void RADIO_TX_Timer_Callback(void *context) {
+	(void)context;
+	UTIL_SEQ_SetTask(TASK_RADIO_TX, CFG_SEQ_Prio_0);
 }
